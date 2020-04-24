@@ -23,7 +23,7 @@ getutil <- function(params, ..., npoints=200) {
     pay1 <- Pay[1]
     # x1 <- attr(Pay, "x0")[1]
     x1 <- attr(Pay, "x0i")[1] # Use interpolated x rather than real x to enforce monotonicity of util on b
-    # x1real <- attr(Pay, "x0")[1]
+    x1real <- attr(Pay, "x0")[1]
 
     xhat1 <- x1 * xhat1prop
     cost1 <- xhat1*V1
