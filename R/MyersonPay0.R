@@ -1,4 +1,4 @@
-MyersonPay1 <- function(b, alloc.fun, ..., f=dunif, F=punif, bmax=1,
+MyersonPay0 <- function(b, alloc.fun, ..., f=dunif, F=punif, bmax=1,
                        subset=1:length(b), interpolate=FALSE,
                        npoints=200) {
 
@@ -8,8 +8,8 @@ MyersonPay1 <- function(b, alloc.fun, ..., f=dunif, F=punif, bmax=1,
   #' than the true x calculated from alloc.fun.
 
   n <- length(b)
-  stopifnot(b <= bmax)
-  x0i <- int1 <- int2 <- b*NA
+  stopifnot(b <= bmax & b >= 0)
+  pay <- x0i <- b*NA
   v <- delta(b, f=f, F=F)
   x0 <- alloc.fun(v, ...)
 
@@ -26,37 +26,40 @@ MyersonPay1 <- function(b, alloc.fun, ..., f=dunif, F=punif, bmax=1,
   d <- qpoints[2] - qpoints[1]
   boundaries <- c(0, seq(min(qpoints) + d/2, max(qpoints), by=d))
 
+  #' The range [0,bmax] is divided into npoints bins. The width of each bin
+  #' is centered at qpoints, and has width d, except for the first and last bin,
+  #' which is bounded by 0 and bmax respectively and have width d/2.
+
+  stopifnot(length(qpoints) == npoints) # sanity checks
+  stopifnot(length(boundaries) == npoints)
+
   for(i in subset) {
     # i <- 1
-    int1bin <- sum(b[i] >= boundaries)
-    int2startbin <- int1bin + 1
-    gt1 <- int1bin:npoints
-    y <- qpoints[gt1]
 
-    stopifnot(b[i] <= bmax)
+    bin1 <- sum(b[i] >= boundaries) # The index of the first bin
+    bins <- bin1:npoints # The indices of all the bins used in integration.
 
-    np <- length(y)
-    x <- sapply(y, function(yi, b2) {
-      b2[i] <- yi
-      v2 <- delta(b2, f=f, F=F)
-      x <- alloc.fun(v2, ...)
-      return(x[i])
-    }, b)
-    # Integration by rectangle rule
-    if(np >= 2) {
-      x0i[i] <- x[1] # x0i[i]: Interpolated x
-      int1[i] <- x0i[i] * boundaries[bin+1]
-      int2[i] <- 0
-      if(np > 2) {
-        int2[i] <- sum(x[-1]) - 0.5*x[-length(x)]
+    b2 <- b # Make a copy first
+
+    # Rectangle integration...
+    for(j in 1:length(bins)) {
+      bin <- bins[j]
+      b2[i] <- qpoints[bin]
+      v2 <- delta(b2, f = f, F=F)
+      x2 <- alloc.fun(v2, ...)[i]
+      if(j == 1) {
+        pay[i] <- ((bins[1]-1)*d + d/2)*x2 # Half width for the first rectangle. Everything else full width.
+        x0i[i] <- x2 # The interpolated x.
+      } else {
+        pay[i] <- pay[i] + d*x2
       }
-    } else {
-      int2[i] <- 0
-      x0i[i] <- x[1]
-      int1[i] <- bmax * x[1]
+
+      if(j == length(bins)) {
+        pay[i] <- pay[i] - x2*d/2 # The last rectangle is only half width
+      }
     }
   }
-  pay <- int1 + int2
+
   if(interpolate) {
     if(any(is.na(pay))) {
       ok <- !is.na(pay)
@@ -65,8 +68,8 @@ MyersonPay1 <- function(b, alloc.fun, ..., f=dunif, F=punif, bmax=1,
       pay[!ok] <- sf(x0[!ok])
     }
   }
-  # attr(pay, "int2") <- data.frame(x=x,y=y)
   attributes(pay) <- list(x0=x0, x0i=x0i)
   return(pay)
 }
+
 
