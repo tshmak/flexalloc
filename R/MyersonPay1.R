@@ -63,6 +63,9 @@ MyersonPay1 <- function(b, alloc.fun, ..., f=dunif, F=punif, bmax=1,
   }
   pay <- int1 + int2
   if(interpolate) {
+    #' Note that interpolation is only a heuristic and is not mathematically sound
+    #' In particular, the relationship between x and pay is not the same for 
+    #' different b and x^max. 
     if(any(is.na(pay))) {
       ok <- !is.na(pay)
       # sf <- splinefun(x=x0[ok], y=pay[ok])
