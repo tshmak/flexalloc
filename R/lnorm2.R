@@ -1,11 +1,11 @@
-dlnorm2 <- function(..., max) {
+dlnorm2 <- function(x, ..., max) {
   P <- plnorm(q=max, ...)
-  return(dlnorm(...)/P)
+  return(ifelse(x>max, 0, dlnorm(x, ...)/P))
 }
 
-plnorm2 <- function(..., max) {
+plnorm2 <- function(q, ..., max) {
   P <- plnorm(q=max, ...)
-  return(plnorm(...)/P)
+  return(pmin(1, plnorm(q, ...)/P))
 }
 
 qlnorm2 <- function(p, ..., max) {
